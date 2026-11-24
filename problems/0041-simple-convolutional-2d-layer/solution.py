@@ -1,8 +1,30 @@
-import torch
-import torch.nn.functional as F
+import numpy as np
 
-def simple_conv2d(input_matrix: torch.Tensor, kernel: torch.Tensor, padding: int, stride: int) -> torch.Tensor:
-    x = input_matrix.float().unsqueeze(0).unsqueeze(0)
-    k = kernel.float().unsqueeze(0).unsqueeze(0)
-    out = F.conv2d(x, k, padding=padding, stride=stride)
-    return out.squeeze(0).squeeze(0)
+def simple_conv2d(input_matrix: np.ndarray, kernel: np.ndarray, padding: int, stride: int):
+    input_height, input_width = input_matrix.shape
+    kernel_height, kernel_width = kernel.shape
+
+    # Apply zero padding
+    padded = np.pad(
+        input_matrix,
+        ((padding, padding), (padding, padding)),
+        mode='constant'
+    )
+
+    # Calculate output dimensions
+    output_height = (input_height + 2 * padding - kernel_height) // stride + 1
+    output_width = (input_width + 2 * padding - kernel_width) // stride + 1
+
+    output_matrix = np.zeros((output_height, output_width))
+
+    # Convolution operation
+    for i in range(output_height):
+        for j in range(output_width):
+            row = i * stride
+            col = j * stride
+
+            region = padded[row:row + kernel_height, col:col + kernel_width]
+
+            output_matrix[i, j] = np.sum(region * kernel)
+
+    return output_matrix
