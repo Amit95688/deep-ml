@@ -1,29 +1,24 @@
-import numpy as np
+import torch
 
 def adam_optimizer(f, grad, x0, learning_rate=0.001,
                    beta1=0.9, beta2=0.999,
                    epsilon=1e-8, num_iterations=10):
 
-    m = np.zeros_like(x0, dtype=float)
-    v = np.zeros_like(x0, dtype=float)
+    x = x0.clone().detach().requires_grad_(True)
 
-    x0 = x0.copy()
+    optimizer = torch.optim.Adam(
+        [x],
+        lr=learning_rate,
+        betas=(beta1, beta2),
+        eps=epsilon
+    )
 
-    for t in range(1, num_iterations + 1):
+    for _ in range(num_iterations):
+        optimizer.zero_grad()
 
-        g = grad(x0)
+        loss = f(x)
+        loss.backward()
 
-        # First moment
-        m = beta1 * m + (1 - beta1) * g
+        optimizer.step()
 
-        # Second moment
-        v = beta2 * v + (1 - beta2) * (g ** 2)
-
-        # Bias correction
-        m_hat = m / (1 - beta1 ** t)
-        v_hat = v / (1 - beta2 ** t)
-
-        # Update parameters
-        x0 -= learning_rate * m_hat / (np.sqrt(v_hat) + epsilon)
-
-    return x0
+    return x.detach()
